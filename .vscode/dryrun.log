@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/matt/Documents/transportino/software/rp2040/transportino_board'
-make: Leaving directory '/home/matt/Documents/transportino/software/rp2040/transportino_board'
- 
-make: *** No targets specified and no makefile found.  Stop.
-
