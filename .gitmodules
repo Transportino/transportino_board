@@ -1,0 +1,3 @@
+[submodule "libs/icm20689pico"]
+	path = libs/icm20689pico
+	url = https://github.com/mattsays/icm20689pico.git

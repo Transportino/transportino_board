@@ -42,13 +42,15 @@ add_compile_definitions(PICO_STDIO_DEFAULT_CRLF=0)
 # Add the standard library to the build
 target_link_libraries(transportino_board pico_stdlib)
 
-target_include_directories(transportino_board PUBLIC ${CMAKE_SOURCE_DIR}/libs/icm20689/include)
-target_link_libraries(transportino_board ${CMAKE_SOURCE_DIR}/libs/icm20689/libicm20689pico.a)
+set(ICM206089 ${CMAKE_SOURCE_DIR}/libs/icm20689pico)
+
+target_link_libraries(transportino_board ${ICM206089}/build/libicm20689pico.a)
+target_include_directories(transportino_board PUBLIC ${ICM206089}/include)
 
 set(MICRO_ROS "${CMAKE_SOURCE_DIR}/../transportino_micro_ros/libmicroros") # Based on transportino repo
 
-target_include_directories(transportino_board PUBLIC ${MICRO_ROS}/include)
 target_link_libraries(transportino_board ${MICRO_ROS}/libmicroros.a)
+target_include_directories(transportino_board PUBLIC ${MICRO_ROS}/include)
 
 
 # Add any user requested libraries from pico sdk
