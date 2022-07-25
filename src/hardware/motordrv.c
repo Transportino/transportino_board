@@ -28,16 +28,6 @@ terror motordrv_init(motordrv* motor_driver, uint8_t enable_pin, motorcfg motors
     return NULL_ERROR;
 }
 
-terror motordrv_update(motordrv* motordrv)
-{
-    for (size_t i = 0; i < MOTORS_NUM; i++)
-    {
-         motor_update(&motordrv->motors[i]);
-    }
-
-    return NULL_ERROR;
-}
-
 terror motordrv_power(motordrv* motordrv, bool power)
 {
     motordrv->power = power;

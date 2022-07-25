@@ -39,7 +39,4 @@ void pid_compute(motor_pid* pid)
 
     pid->last_error = pid->error;
 
-    //printf("measure %d \tgoal %d\t error %lf\t prop %lf\t int %lf\t derv> %lf, value>%d\r\n", *pid->current_measure, *pid->goal, pid->error, pid->proportional, pid->integral, pid->derivate, *pid->output);
-    printf("current_rpm:%lf desired_rpm:%lf error:%lf value:%lf\r\n", *pid->current_measure, *pid->goal, pid->error, *pid->output);
-    //printf("current_rpm:%d desired_rpm:%d error_rpm:%d pid_rpm:%d\r\n", *pid->current_measure, *pid->goal, pid->error, *pid->output);
 }

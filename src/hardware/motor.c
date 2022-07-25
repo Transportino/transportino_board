@@ -143,13 +143,13 @@ terror motor_set_speed(motor* motor, double rpm)
 
 terror motor_move(motor* motor, double rpm)
 {
-    motor_set_dir(motor, rpm >= 0 ? MOTOR_COUNTERCLOCKWISE : MOTOR_CLOCKWISE);
-    motor->desired_rpm = rpm;
-
     if(rpm == 0) {
         motor_stop(motor);
+        return NULL_ERROR;
     }
 
+    motor_set_dir(motor, rpm >= 0 ? MOTOR_COUNTERCLOCKWISE : MOTOR_CLOCKWISE);
+    motor->desired_rpm = rpm;
     return NULL_ERROR;
 }
 
