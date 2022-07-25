@@ -45,7 +45,7 @@ target_link_libraries(transportino_board pico_stdlib)
 target_include_directories(transportino_board PUBLIC ${CMAKE_SOURCE_DIR}/libs/icm20689/include)
 target_link_libraries(transportino_board ${CMAKE_SOURCE_DIR}/libs/icm20689/libicm20689pico.a)
 
-set(MICRO_ROS "${CMAKE_SOURCE_DIR}/../micro_ros/sdk/libmicroros") # Based on transportino repo
+set(MICRO_ROS "${CMAKE_SOURCE_DIR}/../transportino_micro_ros/libmicroros") # Based on transportino repo
 
 target_include_directories(transportino_board PUBLIC ${MICRO_ROS}/include)
 target_link_libraries(transportino_board ${MICRO_ROS}/libmicroros.a)

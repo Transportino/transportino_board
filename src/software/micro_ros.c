@@ -8,8 +8,8 @@
 #include <micro_ros_utilities/type_utilities.h>
 #include <example_interfaces/srv/trigger.h>
 
-#include "transportino_interfaces/srv/board_reset.h"
 #include "transportino_interfaces/srv/board_cmd.h"
+#include "transportino_interfaces/srv/board_reset.h"
 #include "transportino_interfaces/msg/board_motors.h"
 
 #include <hardware/watchdog.h>
@@ -21,25 +21,30 @@ struct timespec ts;
 
 extern int clock_gettime(clockid_t unused, struct timespec *tp);
 
-rosidl_runtime_c__String restarting_msg, prog_restarting_msg, ok_msg, invalid_id_msg;
-
-void setup_response_msg()
-{
-    restarting_msg = micro_ros_string_utilities_init("Restarting board...");
-    prog_restarting_msg = micro_ros_string_utilities_init("Restarting board in programming mode...");
-    ok_msg = micro_ros_string_utilities_init("Ok.");
-    invalid_id_msg = micro_ros_string_utilities_init("Invalid motor id.");
-}
-
 micro_ros* _microros;
+// Msgs
+sensor_msgs__msg__Imu imu_data;
+transportino_interfaces__msg__BoardMotors motors_data;
+rosidl_runtime_c__String ok_msg, restarting_msg, prog_restarting_msg, invalid_id_msg;
+// Service Cmd
+transportino_interfaces__srv__BoardCmd_Request cmd_req;
+transportino_interfaces__srv__BoardCmd_Response cmd_res;
+// Service Restart
+transportino_interfaces__srv__BoardReset_Request reset_req;
+transportino_interfaces__srv__BoardReset_Response reset_res;
+
+
 // Msg inits
 void init_motors_msg(); 
+void init_service_msgs();
 
 // Publisher callbacks
 void timer_callback(rcl_timer_t * timer, int64_t previous_call);
 
 // Service callbacks
 void service_cmd(const void * req, void * res, void* context);
+void service_reset(const void * req, void * res, void* context);
+
 
 terror micro_ros_setup(micro_ros* micro_ros, void* _tboard)
 {
@@ -69,37 +74,28 @@ terror micro_ros_setup(micro_ros* micro_ros, void* _tboard)
 
 terror micro_ros_init(micro_ros* micro_ros)
 {
-
-    setup_response_msg();
-
     rclc_support_init(&micro_ros->support, 0, NULL, &micro_ros->allocator);
 
     rclc_node_init_default(&micro_ros->main_node, "board", "transportino", 
         &micro_ros->support);
 
-    
-    rclc_executor_init(&micro_ros->executor, &micro_ros->support.context, 6, &micro_ros->allocator);
-
+    // Services
+    init_service_msgs();
     // Cmd service
-    
-    /*rclc_service_init_best_effort(
+    rclc_service_init_best_effort(
         &micro_ros->cmd_service, 
         &micro_ros->main_node,
         ROSIDL_GET_SRV_TYPE_SUPPORT(transportino_interfaces, srv, BoardCmd),
         "board/cmd"
     );
+    // Reset service
+    rclc_service_init_best_effort(
+        &micro_ros->reset_service, 
+        &micro_ros->main_node,
+        ROSIDL_GET_SRV_TYPE_SUPPORT(transportino_interfaces, srv, BoardReset),
+        "board/reset"
+    );
 
-    transportino_interfaces__srv__BoardCmd_Request cmd_req;
-    transportino_interfaces__srv__BoardCmd_Response cmd_res;
-
-    rclc_executor_add_service_with_context(
-        &micro_ros->executor,
-        &micro_ros->cmd_service,
-        &cmd_req,
-        &cmd_res,
-        service_cmd,
-        micro_ros
-    );*/
 
     // Imu publisher
     
@@ -110,6 +106,8 @@ terror micro_ros_init(micro_ros* micro_ros)
         "board/imu"
     );
 
+    // Motors publisher
+    
     init_motors_msg();
     rclc_publisher_init_best_effort(
         &micro_ros->motors_publisher, 
@@ -125,6 +123,26 @@ terror micro_ros_init(micro_ros* micro_ros)
         timer_callback
     );
     
+    rclc_executor_init(&micro_ros->executor, &micro_ros->support.context, 3, &micro_ros->allocator);
+
+    rclc_executor_add_service_with_context(
+        &micro_ros->executor,
+        &micro_ros->cmd_service,
+        &cmd_req,
+        &cmd_res,
+        &service_cmd,
+        micro_ros
+    );
+
+    rclc_executor_add_service_with_context(
+        &micro_ros->executor,
+        &micro_ros->reset_service,
+        &reset_req,
+        &reset_res,
+        &service_reset,
+        micro_ros->tboard
+    );
+
     rclc_executor_add_timer(&micro_ros->executor, &micro_ros->timer);
 
     micro_ros->last_ping_time = time_us_32();
@@ -140,19 +158,7 @@ void service_cmd(const void * req, void * res, void* context)
     transportino_interfaces__srv__BoardCmd_Response * res_in = 
         (transportino_interfaces__srv__BoardCmd_Response *) res;
     
-
     micro_ros* microros = (micro_ros*) context;
-
-    if(req_in->id == 255) {
-        transportino_restart(microros->tboard, req_in->dir);
-        res_in->success = true;
-        if(req_in->dir) {
-            res_in->message = restarting_msg;
-        } else {
-            res_in->message = prog_restarting_msg;
-        }
-        return;
-    }
 
     if(req_in->id >= MOTORS_NUM) {
         res_in->success = false;
@@ -160,16 +166,32 @@ void service_cmd(const void * req, void * res, void* context)
         return;
     }
 
-    /*motor* _motor = &((tboard*)microros->tboard)->motordrv->motors[req_in->id];
+    motor* _motor = &((tboard*)microros->tboard)->motordrv->motors[req_in->id];
 
-    if(req_in->speed == 0) {
-        motor_stop(_motor);
-    } else {
-        //motor_move(_motor, req_in->dir, req_in->speed);
-    }*/
+    motor_move(_motor, req_in->speed);
 
     res_in->success = true;
     res_in->message = ok_msg;
+}
+
+void service_reset(const void * req, void * res, void* context)
+{
+    transportino_interfaces__srv__BoardReset_Request * req_in = 
+    (transportino_interfaces__srv__BoardReset_Request *) req;
+
+    transportino_interfaces__srv__BoardReset_Response * res_in = 
+        (transportino_interfaces__srv__BoardReset_Response *) res;
+    
+    tboard* board = (tboard*) context;
+
+    if(req_in->programming_mode) {
+        res_in->message = prog_restarting_msg;
+    } else {
+        res_in->message = restarting_msg;
+    }
+
+    transportino_restart(board, req_in->programming_mode);
+    res_in->success = true;
 }
 
 void ping_callback(micro_ros* micro_ros) 
@@ -185,12 +207,6 @@ void ping_callback(micro_ros* micro_ros)
     watchdog_enable(WATCHDOG_TIMEOUT_MS, false);
 }
 
-sensor_msgs__msg__Imu imu_data;
-double acc[3];
-double gyro[3];
-
-transportino_interfaces__msg__BoardMotors motors_data;
-
 void init_motors_msg() 
 {
     motors_data.motors.size = MOTORS_NUM;
@@ -198,6 +214,17 @@ void init_motors_msg()
     motors_data.motors.data = (transportino_interfaces__msg__BoardMotor *) 
         malloc(MOTORS_NUM * sizeof(transportino_interfaces__msg__BoardMotor));
 }
+
+void init_service_msgs()
+{
+    ok_msg = micro_ros_string_utilities_init("Ok.");
+    restarting_msg = micro_ros_string_utilities_init("Restarting...");
+    prog_restarting_msg = micro_ros_string_utilities_init("Restarting in programming mode..");
+    invalid_id_msg = micro_ros_string_utilities_init("Invalid motor id.");
+}
+
+double acc[3];
+double gyro[3];
 
 
 void timer_callback(rcl_timer_t * timer, int64_t previous_call)
@@ -226,7 +253,7 @@ void timer_callback(rcl_timer_t * timer, int64_t previous_call)
     imu_data.angular_velocity.y = gyro[1];
     imu_data.angular_velocity.z = gyro[2];
 
-    rcl_ret_t result = rcl_publish(&(_microros->imu_publisher), &imu_data, NULL);
+    rcl_publish(&(_microros->imu_publisher), &imu_data, NULL);
 
     motors_data.header.stamp.nanosec = ts.tv_nsec;
     motors_data.header.stamp.sec = ts.tv_sec;
@@ -239,7 +266,7 @@ void timer_callback(rcl_timer_t * timer, int64_t previous_call)
         motors_data.motors.data[i].dir = _motor->dir;
     }
     
-    result = rcl_publish(&(_microros->motors_publisher), &motors_data, NULL);
+    rcl_publish(&(_microros->motors_publisher), &motors_data, NULL);
 }
 
 

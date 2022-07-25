@@ -27,6 +27,7 @@ typedef struct _microros {
 
     // Services
     rcl_service_t cmd_service;
+    rcl_service_t reset_service;
 
 } micro_ros;
 
