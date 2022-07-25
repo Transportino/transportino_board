@@ -1,5 +1,4 @@
 build
-libs
 pico_sdk_import.cmake
 .cache
 .vscode

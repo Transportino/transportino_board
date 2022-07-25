@@ -77,7 +77,7 @@ void transportino_init(tboard* tboard)
     sleep_ms(50);
 
     // Initialise icm20689 module
-    tboard->icm20689 = icm20689_create();
+    tboard->icm20689 = (icm20689*) malloc(sizeof(icm20689));
     
     uint8_t status = icm20689_init(tboard->icm20689);
 
@@ -140,12 +140,19 @@ void transportino_update(tboard* tboard)
     micro_ros_update(tboard->micro_ros);
 
     if(tboard->restart) {
+        transportino_free(tboard);
+
         if(tboard->prog_mode) {
             reset_usb_boot(0, 0);
         } else {
             watchdog_reboot(0, SRAM_END, 0);
         }
-        return;
     }
+}
+
+void transportino_free(tboard* tboard)
+{
+    micro_ros_free(tboard->micro_ros);
+    free(tboard->micro_ros);
 }
 

@@ -34,3 +34,4 @@ typedef struct _microros {
 terror micro_ros_setup(micro_ros* micro_ros, void* tboard);
 terror micro_ros_init(micro_ros* micro_ros);
 terror micro_ros_update(micro_ros* micro_ros);
+terror micro_ros_free(micro_ros* micro_ros);

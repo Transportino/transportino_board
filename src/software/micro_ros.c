@@ -6,7 +6,6 @@
 #include <rmw_microros/rmw_microros.h>
 #include <micro_ros_utilities/string_utilities.h>
 #include <micro_ros_utilities/type_utilities.h>
-#include <example_interfaces/srv/trigger.h>
 
 #include "transportino_interfaces/srv/board_cmd.h"
 #include "transportino_interfaces/srv/board_reset.h"
@@ -97,6 +96,8 @@ terror micro_ros_init(micro_ros* micro_ros)
     );
 
 
+    init_publisher_msgs();
+
     // Imu publisher
     
     rclc_publisher_init_best_effort(
@@ -107,8 +108,8 @@ terror micro_ros_init(micro_ros* micro_ros)
     );
 
     // Motors publisher
-    
-    init_motors_msg();
+
+
     rclc_publisher_init_best_effort(
         &micro_ros->motors_publisher, 
         &micro_ros->main_node,
@@ -198,6 +199,8 @@ void ping_callback(micro_ros* micro_ros)
 {
     watchdog_enable(MICRO_ROS_PING_TIMEOUT_MS + 100, false);
     
+    led_set_pulsating(((tboard*)micro_ros->tboard)->led, true, 3.0f);
+
     rcl_ret_t ros_status = rmw_uros_ping_agent(MICRO_ROS_PING_TIMEOUT_MS / 5, 5);
     if(ros_status != RCL_RET_OK) {
         transportino_restart((tboard*)micro_ros->tboard, false);
@@ -205,14 +208,18 @@ void ping_callback(micro_ros* micro_ros)
 
     // Resetting watchdog timer
     watchdog_enable(WATCHDOG_TIMEOUT_MS, false);
+
+    led_set_pulsating(((tboard*)micro_ros->tboard)->led, true, 5.0f);
 }
 
-void init_motors_msg() 
+void init_publisher_msgs() 
 {
     motors_data.motors.size = MOTORS_NUM;
     motors_data.motors.capacity = MOTORS_NUM;
     motors_data.motors.data = (transportino_interfaces__msg__BoardMotor *) 
         malloc(MOTORS_NUM * sizeof(transportino_interfaces__msg__BoardMotor));
+
+    imu_data.header.frame_id = micro_ros_string_utilities_init("transportino_imu");
 }
 
 void init_service_msgs()
@@ -225,7 +232,7 @@ void init_service_msgs()
 
 double acc[3];
 double gyro[3];
-
+double orientation[2];
 
 void timer_callback(rcl_timer_t * timer, int64_t previous_call)
 {
@@ -238,7 +245,7 @@ void timer_callback(rcl_timer_t * timer, int64_t previous_call)
     imu_data.header.stamp.sec = ts.tv_sec;
     
     uint8_t res = icm20689_read_gyroacc(((tboard*)_microros->tboard)->icm20689, acc, gyro);
-    
+
     if(res != ICM20689_SUCCESS) {
         printf("TransportinoBoard > Could't retrieve data from imu\r\n");
         transportino_error(_microros->tboard, terror_make(TRANSPORTINO_ICM20689, TRANSPORTINO_INTERNAL_ERROR, false));
@@ -247,7 +254,7 @@ void timer_callback(rcl_timer_t * timer, int64_t previous_call)
 
     imu_data.linear_acceleration.x = acc[0];
     imu_data.linear_acceleration.y = acc[1];
-    imu_data.linear_acceleration.z = acc[2] / 9.8f;
+    imu_data.linear_acceleration.z = acc[2];
 
     imu_data.angular_velocity.x = gyro[0];
     imu_data.angular_velocity.y = gyro[1];
@@ -283,3 +290,14 @@ terror micro_ros_update(micro_ros* micro_ros)
     return NULL_ERROR;
 }
 
+terror micro_ros_free(micro_ros* micro_ros)
+{
+    rcl_service_fini(&micro_ros->cmd_service, &micro_ros->main_node);
+    rcl_service_fini(&micro_ros->reset_service, &micro_ros->main_node);
+    rcl_publisher_fini(&micro_ros->imu_publisher, &micro_ros->main_node);
+    rcl_publisher_fini(&micro_ros->motors_publisher, &micro_ros->main_node);
+    rcl_timer_fini(&micro_ros->timer);
+    rclc_executor_fini(&micro_ros->executor);
+    rcl_node_fini(&micro_ros->main_node);
+    rclc_support_fini(&micro_ros->support);
+}

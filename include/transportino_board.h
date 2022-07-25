@@ -24,3 +24,4 @@ typedef struct _board {
 void transportino_init(tboard* tboard);
 void transportino_restart(tboard* tboard, bool prog_mode);
 void transportino_update(tboard* tboard);
+void transportino_free(tboard* tboard);
