@@ -57,8 +57,6 @@ void transportino_init(tboard* tboard)
         }
     };
 
-
-    
     led_set_pulsating(tboard->led, true, 1.5f);
     
     tboard->motordrv = (motordrv*) malloc(sizeof(motordrv));
@@ -89,10 +87,10 @@ void transportino_init(tboard* tboard)
         return;
     }
     
-    /*led_set_pulsating(tboard->led, false, 0.0f);
+    led_set_pulsating(tboard->led, false, 0.0f);
     
     // Cool buzzer startup sound :3
-    nokia_play(tboard->buzz);*/
+    nokia_play(tboard->buzz);
     
     // Led and Buzzer can't work simultaneously unfortunately because both buzzer and led pins are on the same pwm channel.
     // In the near future I will make use of different pins on a new board and 
@@ -103,13 +101,13 @@ void transportino_init(tboard* tboard)
     // Hardware initialisation completed..
     
     // Start micro_ros backend
-    /*tboard->micro_ros = (micro_ros*) malloc(sizeof(micro_ros));
+    tboard->micro_ros = (micro_ros*) malloc(sizeof(micro_ros));
     micro_ros_setup(tboard->micro_ros, tboard);
-    micro_ros_init(tboard->micro_ros);*/
+    micro_ros_init(tboard->micro_ros);
 
     // Ros agent connected!
 
-    /*led_set_pulsating(tboard->led, false, 0.0f);
+    led_set_pulsating(tboard->led, false, 0.0f);
 
     buzz_play(tboard->buzz, NOTE_A5);
     sleep_ms(100);
@@ -122,20 +120,9 @@ void transportino_init(tboard* tboard)
     buzz_play(tboard->buzz, NOTE_A5);
     sleep_ms(100);
 
-    buzz_mute(tboard->buzz);*/
+    buzz_mute(tboard->buzz);
 
     led_set_pulsating(tboard->led, true, 5.0f);
-    
-    for (uint8_t j = 0; j < MOTORS_NUM; j++)
-    {
-        for (double i = -178; i < 178; i+=1)
-        {
-            motor_move(&tboard->motordrv->motors[j], i);
-            sleep_ms(100);
-        }
-
-        motor_stop(&tboard->motordrv->motors[j]);
-    }
     
     // Setting up watchdog so the board will auto reboot after 5s of inactivity
     watchdog_enable(WATCHDOG_TIMEOUT_MS, false);
@@ -150,7 +137,7 @@ void transportino_update(tboard* tboard)
 { 
     watchdog_update(); // Resetting watchdog timer.
     
-    //micro_ros_update(tboard->micro_ros);
+    micro_ros_update(tboard->micro_ros);
 
     if(tboard->restart) {
         if(tboard->prog_mode) {
@@ -160,7 +147,5 @@ void transportino_update(tboard* tboard)
         }
         return;
     }
-
-    //motordrv_update(tboard->motordrv);
 }
 
