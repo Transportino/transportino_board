@@ -6,9 +6,10 @@
 
 #include "transportino_error.h"
 
+#define CLAMP(value, min, max) MAX(MIN(value, max), min)
+
 #define MOTOR_CLOCKWISE 0
 #define MOTOR_COUNTERCLOCKWISE 1
-
 
 typedef struct _motorcfg {
     uint8_t pin_a;
@@ -19,6 +20,7 @@ typedef struct _motorcfg {
     uint8_t enc_pin_a;
     uint8_t enc_pin_b;
 
+    uint16_t min_rpm;
     uint16_t max_rpm;
 
     double kp, ki , kd;
@@ -38,6 +40,7 @@ typedef struct _motor {
     volatile double current_rpm;
     volatile double desired_rpm;
 
+    uint16_t min_rpm;
     uint16_t max_rpm;
     uint16_t pwm_per_rpm;
 

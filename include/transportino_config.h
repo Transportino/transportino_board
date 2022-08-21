@@ -13,7 +13,10 @@
 #define LED_PIN 7
 
 #define MOTORS_NUM 2
+#define MOTORS_WHEEL_SEPARATION 0.243 // meters
+#define MOTORS_WHEEL_RADIUS 0.0335 // meters
 
+#define MOTOR_MIN_RPM 10
 #define MOTOR_MAX_RPM 178
 #define MOTOR_PULSES_PER_REVOLUTIONS 11
 #define MOTOR_REDUCTION_RATE 56
@@ -31,3 +34,15 @@
 #define MOTOR_B_PWM 21
 #define MOTOR_B_ENC0 25
 #define MOTOR_B_ENC1 24
+
+// Ros related params
+
+#define ODOM_FRAME "odom"
+#define BASE_FRAME "base_link"
+#define IMU_FRAME "imu_link"
+
+#define LEFT_WHEEL_JOINT "left_wheel_joint"
+#define RIGHT_WHEEL_JOINT "right_wheel_joint"
+
+#define DATA_FREQUENCY 30.0
+

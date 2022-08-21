@@ -1,5 +1,6 @@
 #include "hardware/motor.h"
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "pico/stdlib.h"
@@ -9,9 +10,6 @@
 #include "transportino_board.h"
 #include "hardware/motordrv.h"
 #include "transportino_error.h"
-
-
-#define CLAMP(value, min, max) MAX(MIN(value, max), min)
 
 typedef struct repeating_timer enc_timer;
 
@@ -68,6 +66,7 @@ terror motor_init(motor* motor, motorcfg* motor_cfg, void* board)
     motor->desired_rpm = 0;
     motor->pwm_slice = 0;
     motor->pwm_value = 0;
+    motor->min_rpm = motor_cfg->min_rpm;
     motor->max_rpm = motor_cfg->max_rpm;
     motor->pwm_per_rpm = UINT16_MAX / motor_cfg->max_rpm;
 
@@ -143,13 +142,15 @@ terror motor_set_speed(motor* motor, double rpm)
 
 terror motor_move(motor* motor, double rpm)
 {
-    if(rpm == 0) {
+    if(fabs(rpm) < motor->min_rpm) {
         motor_stop(motor);
         return NULL_ERROR;
     }
-
+    
     motor_set_dir(motor, rpm >= 0 ? MOTOR_COUNTERCLOCKWISE : MOTOR_CLOCKWISE);
-    motor->desired_rpm = rpm;
+    
+    pid_reset(motor->pid);
+    motor->desired_rpm = CLAMP(rpm, -MOTOR_MAX_RPM, MOTOR_MAX_RPM);
     return NULL_ERROR;
 }
 
