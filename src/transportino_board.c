@@ -40,8 +40,9 @@ void transportino_init(tboard* tboard)
             .enc_pin_a = MOTOR_A_ENC0, 
             .enc_pin_b = MOTOR_A_ENC1, 
             .max_rpm = MOTOR_MAX_RPM,
+            .min_rpm = MOTOR_MIN_RPM,
             .kp = 0.2,
-            .ki = 2.4,
+            .ki = 2.8,
             .kd = 0.015,
         }, 
         {   // Motor B
@@ -51,6 +52,7 @@ void transportino_init(tboard* tboard)
             .enc_pin_a = MOTOR_B_ENC0, 
             .enc_pin_b = MOTOR_B_ENC1, 
             .max_rpm = MOTOR_MAX_RPM,
+            .min_rpm = MOTOR_MIN_RPM,
             .kp = 0.2,
             .ki = 2.8,
             .kd = 0.015,
@@ -61,6 +63,10 @@ void transportino_init(tboard* tboard)
     
     tboard->motordrv = (motordrv*) malloc(sizeof(motordrv));
     motordrv_init(tboard->motordrv, MOTOR_DRIVER_ENABLE_PIN, motors, tboard);
+
+    // Initialize temperature component
+    tboard->temp_sensor = (temp_sensor*) malloc(sizeof(temp_sensor));
+    temp_init(tboard->temp_sensor);
 
     // Initialize imu module
     led_set_pulsating(tboard->led, true, 2.0f);
@@ -87,6 +93,7 @@ void transportino_init(tboard* tboard)
         return;
     }
     
+    
     led_set_pulsating(tboard->led, false, 0.0f);
     
     // Cool buzzer startup sound :3
@@ -102,7 +109,14 @@ void transportino_init(tboard* tboard)
     
     // Start micro_ros backend
     tboard->micro_ros = (micro_ros*) malloc(sizeof(micro_ros));
-    micro_ros_setup(tboard->micro_ros, tboard);
+    
+    terror micro_ros_status = micro_ros_setup(tboard->micro_ros, tboard);
+    
+    if(!transportino_is_error_null(micro_ros_status)) {
+        watchdog_enable(1, 1);
+        while(true) {}
+    }
+
     micro_ros_init(tboard->micro_ros);
 
     // Ros agent connected!

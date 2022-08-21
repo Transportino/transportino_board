@@ -5,6 +5,7 @@
 #include "hardware/led.h"
 #include "hardware/buzzer.h"
 #include "hardware/motordrv.h"
+#include "hardware/temperature.h"
 #include "software/micro_ros.h"
 
 #include <icm20689pico/icm20689pico.h>
@@ -17,6 +18,7 @@ typedef struct _board {
     buzzer* buzz;
     motordrv* motordrv;
     icm20689* icm20689;
+    temp_sensor* temp_sensor;
     // Software components
     micro_ros* micro_ros;
 } tboard;

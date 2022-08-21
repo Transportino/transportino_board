@@ -58,6 +58,7 @@ target_link_libraries(transportino_board
         hardware_i2c
         hardware_pwm
         hardware_watchdog
+        hardware_adc
 )
 
 SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
