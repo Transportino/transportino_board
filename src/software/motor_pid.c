@@ -10,19 +10,30 @@ void pid_init(motor_pid* pid, double kp, double ki, double kd, double delta_time
     pid->kp = kp;
     pid->ki = ki;
     pid->kd = kd;
+    
+    pid->proportional = 0.0;
+    pid->integral = 0.0;
+    pid->derivate = 0.0;
 
-    pid->proportional = 0;
-    pid->integral = 0;
-    pid->derivate = 0;
-
-    pid->last_error = 0;
-    pid->error = 0;
+    pid->last_error = 0.0;
+    pid->error = 0.0;
     pid->delta_time = delta_time;
     pid->min_value = min_value;
     pid->max_value = max_value;
     pid->current_measure = current_measure;
     pid->output = output;
     pid->goal = goal;
+}
+
+void pid_reset(motor_pid* pid)
+{
+    pid->proportional = 0.0;
+    pid->integral = 0.0;
+    pid->derivate = 0.0;
+    pid->last_error = 0.0;
+    pid->error = 0.0;
+    *pid->output = 0.0;
+    *pid->goal = 0.0;
 }
 
 void pid_compute(motor_pid* pid)
